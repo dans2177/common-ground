@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import HomeScreen from './screens/HomeScreen';
 import PollScreen from './screens/PollScreen';
 import ResultsScreen from './screens/ResultsScreen';
+import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import { Colors } from './constants/theme';
 import { RootStackParamList } from './types';
 
@@ -68,6 +69,14 @@ export default function App() {
             options={{
               title: 'RESULTS',
               headerBackTitle: 'Poll',
+            }}
+          />
+          <Stack.Screen
+            name="Admin"
+            component={AdminDashboardScreen}
+            options={{
+              title: 'ADMIN',
+              headerBackTitle: 'Home',
             }}
           />
         </Stack.Navigator>

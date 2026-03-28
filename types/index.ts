@@ -42,4 +42,5 @@ export type RootStackParamList = {
   Home: undefined;
   Poll: { pollId: string };
   Results: { pollId: string; voteX: number; voteY: number };
+  Admin: undefined;
 };

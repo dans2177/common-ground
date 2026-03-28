@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -64,6 +64,9 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
+// Show admin button in dev/local mode
+const IS_DEV = __DEV__ || Platform.OS === 'web';
+
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { polls, loading } = usePolls();
@@ -71,6 +74,18 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+
+      {/* ── ADMIN BUTTON (dev only) ── */}
+      {IS_DEV && (
+        <TouchableOpacity
+          style={[styles.adminButton, { top: insets.top + 8 }]}
+          onPress={() => navigation.navigate('Admin')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.adminDot} />
+          <Text style={styles.adminText}>ADMIN</Text>
+        </TouchableOpacity>
+      )}
 
       <ScrollView
         style={styles.scroll}
@@ -325,5 +340,31 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 4,
     letterSpacing: 1,
+  },
+  adminButton: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.accent + '18',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.accent + '40',
+    gap: 5,
+  },
+  adminDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.accent,
+  },
+  adminText: {
+    color: Colors.accent,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
 });
