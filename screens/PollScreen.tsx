@@ -22,10 +22,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import PollDiamond from '../components/PollDiamond';
+import VibeCard from '../components/VibeCard';
 import { usePoll, useVote } from '../hooks/usePolls';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 import { positionToLabel, positionToTakeKey } from '../utils/diamondMath';
-import { RootStackParamList, Position, PerspectiveCard } from '../types';
+import { RootStackParamList, Position, PerspectiveCard, CustomResponse, NewsContext } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Poll'>;
 
@@ -173,6 +174,33 @@ function SectionDivider({ label, delay }: { label: string; delay: number }) {
   );
 }
 
+// ─── News Context Card ───────────────────────────────────
+function NewsContextItem({
+  item,
+  index,
+}: {
+  item: NewsContext;
+  index: number;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(300).delay(100 + index * 80).springify()}
+      style={ncStyles.card}
+    >
+      <View style={ncStyles.sourceRow}>
+        <Text style={ncStyles.source}>{item.source}</Text>
+        <Text style={ncStyles.date}>{item.date}</Text>
+      </View>
+      <Text style={ncStyles.headline}>{item.headline}</Text>
+      <Text style={ncStyles.snippet}>{item.snippet}</Text>
+      <View style={ncStyles.relevanceWrap}>
+        <Text style={ncStyles.relevanceLabel}>WHY IT MATTERS</Text>
+        <Text style={ncStyles.relevanceText}>{item.relevance}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
 // ─── Main Screen ─────────────────────────────────────────
 export default function PollScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
@@ -183,6 +211,7 @@ export default function PollScreen({ navigation, route }: Props) {
   const [hasVoted, setHasVoted] = useState(false);
   const [votePos, setVotePos] = useState({ x: 0, y: 0 });
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [selectedVibe, setSelectedVibe] = useState<CustomResponse | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const buttonScale = useSharedValue(1);
@@ -203,13 +232,14 @@ export default function PollScreen({ navigation, route }: Props) {
       withSpring(1, { damping: 12 })
     );
 
-    await vote(route.params.pollId, votePos.x, votePos.y);
+    await vote(route.params.pollId, votePos.x, votePos.y, selectedVibe?.id);
 
     setTimeout(() => {
       navigation.navigate('Results', {
         pollId: route.params.pollId,
         voteX: votePos.x,
         voteY: votePos.y,
+        selectedVibeId: selectedVibe?.id,
       });
     }, 600);
   };
@@ -252,6 +282,19 @@ export default function PollScreen({ navigation, route }: Props) {
         </Text>
       </Animated.View>
 
+      {/* ── NEWS CONTEXT ── */}
+      {poll.newsContext && poll.newsContext.length > 0 && (
+        <>
+          <SectionDivider label="WHAT'S HAPPENING" delay={30} />
+          <Animated.Text entering={FadeIn.duration(300).delay(60)} style={styles.subtitle}>
+            Real context to ground your opinion. No spin, just signal.
+          </Animated.Text>
+          {poll.newsContext.map((item, idx) => (
+            <NewsContextItem key={idx} item={item} index={idx} />
+          ))}
+        </>
+      )}
+
       {/* ── UNDERSTAND EACH SIDE ── */}
       <SectionDivider label="UNDERSTAND EACH SIDE" delay={50} />
       <Animated.Text entering={FadeIn.duration(300).delay(80)} style={styles.subtitle}>
@@ -275,6 +318,33 @@ export default function PollScreen({ navigation, route }: Props) {
         percent={poll.commonGround.percent}
         sharedValues={poll.commonGround.sharedValues}
       />
+
+      {/* ── PICK YOUR VIBE ── */}
+      {poll.customResponses && poll.customResponses.length > 0 && (
+        <>
+          <SectionDivider label="PICK YOUR VIBE" delay={300} />
+          <Animated.Text entering={FadeIn.duration(300).delay(350)} style={styles.subtitle}>
+            Choose the response that feels most like you. Then fine-tune on the diamond.
+          </Animated.Text>
+
+          <View style={styles.vibeGrid}>
+            {poll.customResponses.map((resp) => (
+              <VibeCard
+                key={resp.id}
+                response={resp}
+                selected={selectedVibe?.id === resp.id}
+                onSelect={() => {
+                  setSelectedVibe(resp);
+                  // Jump diamond to the vibe's mapped position
+                  setVotePos(resp.mappedPosition);
+                  setPosLabel(positionToLabel(resp.mappedPosition.x, resp.mappedPosition.y));
+                  setCurrentTake(positionToTakeKey(resp.mappedPosition.x, resp.mappedPosition.y));
+                }}
+              />
+            ))}
+          </View>
+        </>
+      )}
 
       {/* ── NOW PLACE YOUR VOICE ── */}
       <SectionDivider label="PLACE YOUR VOICE" delay={400} />
@@ -426,6 +496,71 @@ const pStyles = StyleSheet.create({
     borderTopColor: Colors.surfaceBorder,
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
+  },
+});
+
+// ─── News Context Styles ─────────────────────────────────
+const ncStyles = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.surfaceBorder,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.yellowTint + '88',
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  source: {
+    color: Colors.yellowTint,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    flex: 1,
+  },
+  date: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  headline: {
+    color: Colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 21,
+    marginBottom: 8,
+  },
+  snippet: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  relevanceWrap: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.surfaceBorder,
+  },
+  relevanceLabel: {
+    color: Colors.textMuted,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  relevanceText: {
+    color: Colors.accent,
+    fontSize: 12,
+    fontWeight: '600',
+    fontStyle: 'italic',
+    lineHeight: 17,
   },
 });
 
@@ -597,6 +732,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     fontStyle: 'italic',
+  },
+  vibeGrid: {
+    gap: 10,
+    marginBottom: 4,
   },
   diamondWrap: {
     alignItems: 'center',

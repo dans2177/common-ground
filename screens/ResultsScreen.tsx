@@ -23,7 +23,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DIAMOND_SIZE = Math.min(SCREEN_WIDTH - 80, 320);
 
 export default function ResultsScreen({ navigation, route }: Props) {
-  const { pollId, voteX, voteY } = route.params;
+  const { pollId, voteX, voteY, selectedVibeId } = route.params;
   const { poll, loading: pollLoading } = usePoll(pollId);
   const { dots: baseDots, loading: dotsLoading } = useResults(pollId);
 
@@ -102,6 +102,24 @@ export default function ResultsScreen({ navigation, route }: Props) {
           {positionToLabel(voteX, voteY)}
         </Text>
       </Animated.View>
+
+      {/* Selected Vibe */}
+      {selectedVibeId && poll.customResponses && (() => {
+        const vibe = poll.customResponses.find(r => r.id === selectedVibeId);
+        if (!vibe) return null;
+        return (
+          <Animated.View
+            entering={FadeInUp.duration(300).delay(250)}
+            style={styles.vibeResult}
+          >
+            <Text style={styles.vibeResultEmoji}>{vibe.emoji}</Text>
+            <Text style={styles.vibeResultText}>{vibe.text}</Text>
+            <Text style={styles.vibeResultStat}>
+              You and ~{Math.floor(Math.random() * 25 + 15)}% chose this vibe
+            </Text>
+          </Animated.View>
+        );
+      })()}
 
       {/* Legend */}
       <Animated.View
@@ -245,6 +263,32 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase',
+  },
+  vibeResult: {
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.accent + '44',
+    marginBottom: Spacing.lg,
+  },
+  vibeResultEmoji: {
+    fontSize: 28,
+    marginBottom: 6,
+  },
+  vibeResultText: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  vibeResultStat: {
+    color: Colors.accent,
+    fontSize: FontSize.xs,
+    fontWeight: '600',
   },
   legendWrap: {
     width: '100%',

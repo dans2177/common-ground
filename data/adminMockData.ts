@@ -1,4 +1,6 @@
 import { Colors } from '../constants/theme';
+import { DailyQuestionSet } from '../types';
+import { TOMORROW_DRAFTS } from './mockData';
 
 export interface CityQuestionSet {
   city: string;
@@ -176,3 +178,9 @@ export const FAKE_POLLING_RESULTS = {
     right: 11,
   },
 };
+
+// ═══════════════════════════════════════════════════════════════════
+// PENDING QUESTION SET (for admin generate/approve flow)
+// ═══════════════════════════════════════════════════════════════════
+
+export const PENDING_QUESTION_SET: DailyQuestionSet = TOMORROW_DRAFTS;

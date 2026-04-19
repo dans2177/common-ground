@@ -6,12 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 import { RootStackParamList } from '../types';
+import AdminQuestionCard from '../components/AdminQuestionCard';
+import { useDraftQuestions, useGenerateQuestions, useApproveQuestions } from '../hooks/usePolls';
 import {
   ADMIN_STATS,
   CITY_QUESTION_SETS,
@@ -175,6 +178,21 @@ export default function AdminDashboardScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const stats = ADMIN_STATS;
   const polling = FAKE_POLLING_RESULTS;
+  const { questionSet: drafts, loading: draftsLoading, refresh: refreshDrafts } = useDraftQuestions();
+  const { generate, generating } = useGenerateQuestions();
+  const { approve, approving } = useApproveQuestions();
+
+  const handleGenerate = async () => {
+    await generate('Phoenix', 'Arizona');
+    refreshDrafts();
+  };
+
+  const handleApproveAll = async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    await approve(tomorrow.toISOString().split('T')[0]);
+    refreshDrafts();
+  };
 
   return (
     <View style={styles.container}>
@@ -183,6 +201,24 @@ export default function AdminDashboardScreen({ navigation }: Props) {
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── PREVIEW ONBOARDING ── */}
+        <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.previewCard}>
+          <View style={styles.previewHeader}>
+            <Text style={styles.previewEmoji}>👁</Text>
+            <View>
+              <Text style={styles.previewTitle}>ONBOARDING PREVIEW</Text>
+              <Text style={styles.previewSubtext}>Test the 12-question flow as a user</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.previewBtn}
+            onPress={() => navigation.navigate('Onboarding', { previewMode: true })}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.previewBtnText}>▶ PREVIEW</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
         {/* ── HERO STAT ── */}
         <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.heroCard}>
           <StatusBadge ok={stats.flaggedCount < 50} />
@@ -316,6 +352,59 @@ export default function AdminDashboardScreen({ navigation }: Props) {
           ))}
         </Animated.View>
 
+        {/* ── TOMORROW'S QUESTIONS ── */}
+        <Animated.View entering={FadeInDown.delay(550).duration(400)} style={styles.section}>
+          <Text style={styles.sectionTitle}>TOMORROW'S DROP</Text>
+          <Text style={styles.sectionSubtitle}>
+            Generate, review, and approve tomorrow's 3 daily questions.
+          </Text>
+
+          {/* Generate button */}
+          <TouchableOpacity
+            style={[styles.generateBtn, generating && { opacity: 0.6 }]}
+            onPress={handleGenerate}
+            activeOpacity={0.7}
+            disabled={generating}
+          >
+            {generating ? (
+              <ActivityIndicator color={Colors.background} size="small" />
+            ) : (
+              <Text style={styles.generateBtnText}>⚡ GENERATE NEW SET</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Draft cards */}
+          {draftsLoading ? (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <ActivityIndicator color={Colors.accent} size="small" />
+            </View>
+          ) : drafts ? (
+            <>
+              <AdminQuestionCard poll={drafts.national} />
+              <AdminQuestionCard poll={drafts.state} />
+              <AdminQuestionCard poll={drafts.local} />
+
+              {/* Approve all */}
+              <TouchableOpacity
+                style={[styles.approveAllBtn, approving && { opacity: 0.6 }]}
+                onPress={handleApproveAll}
+                activeOpacity={0.7}
+                disabled={approving}
+              >
+                {approving ? (
+                  <ActivityIndicator color={Colors.background} size="small" />
+                ) : (
+                  <Text style={styles.approveAllBtnText}>✓ APPROVE ALL & SCHEDULE</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Text style={styles.sectionSubtitle}>No drafts yet — generate a set above.</Text>
+            </View>
+          )}
+        </Animated.View>
+
         {/* ── SUMMARY ── */}
         <Animated.View entering={FadeInDown.delay(600).duration(400)} style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>AI GENERATION SUMMARY</Text>
@@ -411,6 +500,52 @@ const trendStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { flex: 1 },
+
+  // Preview onboarding card
+  previewCard: {
+    margin: 20,
+    marginBottom: 0,
+    padding: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.purpleTint + '30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  previewEmoji: { fontSize: 24 },
+  previewTitle: {
+    color: Colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  previewSubtext: {
+    color: Colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  previewBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.purpleTint + '22',
+    borderWidth: 1,
+    borderColor: Colors.purpleTint + '55',
+  },
+  previewBtnText: {
+    color: Colors.purpleTint,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
 
   // Hero card
   heroCard: {
@@ -547,5 +682,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     marginBottom: 12,
+  },
+
+  // Tomorrow's questions
+  generateBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  generateBtnText: {
+    color: Colors.background,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  approveAllBtn: {
+    backgroundColor: Colors.greenTint,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  approveAllBtnText: {
+    color: Colors.background,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
 });

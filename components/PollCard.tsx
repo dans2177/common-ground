@@ -8,7 +8,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Polygon, Line, Circle } from 'react-native-svg';
 import { Colors, Spacing, FontSize } from '../constants/theme';
-import { Poll } from '../types';
+import { Poll, PollScope } from '../types';
+
+const SCOPE_EMOJI: Record<PollScope, string> = {
+  national: '🌎',
+  state: '🏛',
+  local: '📍',
+};
 
 interface PollCardProps {
   poll: Poll;
@@ -82,6 +88,10 @@ export default function PollCard({ poll, index, onPress }: PollCardProps) {
           {/* Header row */}
           <View style={styles.headerRow}>
             <View style={styles.badges}>
+              <View style={styles.scopeBadge}>
+                <Text style={styles.scopeEmoji}>{SCOPE_EMOJI[poll.scope]}</Text>
+                <Text style={styles.scopeLabel}>{poll.scope.toUpperCase()}</Text>
+              </View>
               <View style={[styles.categoryBadge, { borderColor: cardAccentColor + '66' }]}>
                 <Text style={[styles.categoryText, { color: cardAccentColor }]}>
                   {poll.category.toUpperCase()}
@@ -146,6 +156,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  scopeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: Colors.accent + '18',
+    borderWidth: 1,
+    borderColor: Colors.accent + '40',
+  },
+  scopeEmoji: {
+    fontSize: 10,
+  },
+  scopeLabel: {
+    color: Colors.accent,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   categoryBadge: {
     paddingHorizontal: 10,

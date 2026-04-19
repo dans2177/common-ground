@@ -7,7 +7,7 @@ import Svg, { Polygon, Line, Circle } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import CountdownTimer from '../components/CountdownTimer';
 import PollCard from '../components/PollCard';
-import { usePolls } from '../hooks/usePolls';
+import { useTodayPolls } from '../hooks/usePolls';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 import { RootStackParamList } from '../types';
 
@@ -69,7 +69,7 @@ const IS_DEV = __DEV__ || Platform.OS === 'web';
 
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { polls, loading } = usePolls();
+  const { polls, loading } = useTodayPolls();
 
   return (
     <View style={styles.container}>
@@ -127,13 +127,13 @@ export default function HomeScreen({ navigation }: Props) {
           <StatPill value="#2" label="TRENDING" />
         </View>
 
-        {/* ── POLLS SECTION ── */}
-        <SectionHeader title="TODAY'S POLLS" />
+        {/* ── TODAY'S DROP ── */}
+        <SectionHeader title="TODAY'S DROP" />
 
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={Colors.accent} size="small" />
-            <Text style={styles.loadingText}>Loading polls...</Text>
+            <Text style={styles.loadingText}>Loading today's questions...</Text>
           </View>
         ) : polls.length === 0 ? (
           <View style={styles.emptyWrap}>
@@ -141,14 +141,21 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.emptySubtitle}>Check back soon — new polls drop at midnight EST.</Text>
           </View>
         ) : (
-          polls.map((poll, index) => (
-            <PollCard
-              key={poll.id}
-              poll={poll}
-              index={index}
-              onPress={() => navigation.navigate('Poll', { pollId: poll.id })}
-            />
-          ))
+          <>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressText}>
+                {polls.length} questions today — 🌎 National · 🏛 State · 📍 Local
+              </Text>
+            </View>
+            {polls.map((poll, index) => (
+              <PollCard
+                key={poll.id}
+                poll={poll}
+                index={index}
+                onPress={() => navigation.navigate('Poll', { pollId: poll.id })}
+              />
+            ))}
+          </>
         )}
 
         {/* ── FOOTER ── */}
@@ -317,6 +324,15 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
+  },
+  progressRow: {
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  progressText: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   footer: {
     alignItems: 'center',

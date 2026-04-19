@@ -9,6 +9,7 @@ import HomeScreen from './screens/HomeScreen';
 import PollScreen from './screens/PollScreen';
 import ResultsScreen from './screens/ResultsScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
 import { Colors } from './constants/theme';
 import { RootStackParamList } from './types';
 
@@ -34,6 +35,7 @@ export default function App() {
       <StatusBar style="light" />
       <NavigationContainer theme={DarkTheme}>
         <Stack.Navigator
+          initialRouteName="Onboarding"
           screenOptions={{
             headerStyle: {
               backgroundColor: Colors.background,
@@ -50,6 +52,11 @@ export default function App() {
             animation: 'slide_from_right',
           }}
         >
+          <Stack.Screen
+            name="Onboarding"
+            component={OnboardingScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="Home"
             component={HomeScreen}
